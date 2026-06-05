@@ -4,16 +4,26 @@ export function formatPrice(value: number): string {
   return `${value.toFixed(2)} €`;
 }
 
-export function formatDate(iso: string, lang: Lang = "sq"): string {
+// Kosovo/Pristina timezone (CET/CEST). Fixed so server (UTC) and client render
+// identical strings — otherwise React throws a hydration mismatch.
+const TZ = "Europe/Belgrade";
+
+const dateTimeFmt = new Intl.DateTimeFormat("en-GB", {
+  timeZone: TZ,
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function formatDate(iso: string, _lang: Lang = "sq"): string {
   // SQLite stores UTC ("YYYY-MM-DD HH:MM:SS"); normalize to a real Date.
   const date = new Date(iso.replace(" ", "T") + "Z");
-  return date.toLocaleString(lang === "sq" ? "sq-AL" : "en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  // en-GB numeric format ("dd/mm/yyyy, HH:mm") reads the same in both languages.
+  return dateTimeFmt.format(date);
 }
 
 const MONTHS_SQ = [

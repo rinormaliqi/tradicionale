@@ -45,14 +45,26 @@ AUTH_SECRET=<a-long-random-string>       # signs the admin cookie
 - `/order/[id]` — confirmation
 
 **Admin** (login at `/admin/login`)
-- `/admin/dashboard` — revenue, order counts, top products, recent orders
-- `/admin/orders` — all orders, filter by status
-- `/admin/orders/[id]` — order detail, status update, print driver slip
+- `/admin/dashboard` — revenue, order counts, top products, recent orders, and a monthly-statements table
+- `/admin/orders` — all orders with **search** (name / phone / #), **status filter**, and **pagination** (handles large volumes); **"New order"** button to add phone / WhatsApp / in-store orders manually
+- `/admin/orders/[id]` — order detail, source, status update, print driver slip
 - `/admin/products` — add / edit / delete products (bilingual), upload product images, mark as featured
 - `/admin/inventory` — view & update stock levels (with low-stock warnings)
+- `/admin/reports` — monthly financial statements (calendar month, 1st → end), **printable** and **downloadable as PDF**
 - `/admin/content` — edit the homepage hero banner and manage promotional banners (offers, discounts, seasonal campaigns)
 
-Stock is automatically decremented when an order is placed.
+Stock is automatically decremented when an order is placed (online or manual).
+
+## Orders & statements
+
+- **Manual orders:** for orders taken by phone / WhatsApp / in person, click **New order** on
+  `/admin/orders`, pick products, enter the customer's details and the source. These count
+  toward stats and statements just like online orders.
+- **Order source** (online / phone / WhatsApp / in-store) is shown on the list and detail,
+  and broken down in the monthly report.
+- **Monthly statements** are computed per calendar month (revenue excludes cancelled orders)
+  with breakdowns by status, by source, and top products. View them at `/admin/reports`,
+  **Print** them, or **Download PDF** (generated server-side with `pdfkit`).
 
 ## Images
 
