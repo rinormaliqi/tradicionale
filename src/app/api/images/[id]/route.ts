@@ -3,7 +3,7 @@ import { getImageBytes } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
-export function GET(
+export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -13,7 +13,7 @@ export function GET(
   }
 
   const thumb = req.nextUrl.searchParams.get("thumb") === "1";
-  const bytes = getImageBytes(id, thumb);
+  const bytes = await getImageBytes(id, thumb);
   if (!bytes) {
     return new Response("Not found", { status: 404 });
   }

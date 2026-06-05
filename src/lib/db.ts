@@ -1,42 +1,48 @@
-import Database from "better-sqlite3";
-import path from "path";
+import { createClient, type Client } from "@libsql/client";
 import fs from "fs";
+import path from "path";
 
 /**
- * SQLite connection (single local file).
+ * Database client (libSQL / Turso).
  *
- * The whole data layer lives here so the storage backend is swappable:
- * to move to a free hosted SQLite (e.g. Turso) later, only this file changes.
+ * - Locally: falls back to a local SQLite file (`file:./data/tradicionale.db`).
+ * - In production (Vercel): set TURSO_DATABASE_URL + TURSO_AUTH_TOKEN and it
+ *   talks to your hosted Turso database. Same SQL, just a remote connection.
+ *
+ * libSQL is SQLite-compatible, so all the existing SQL keeps working — the only
+ * difference from before is that calls are asynchronous (await).
  */
 
-const DB_DIR = path.join(process.cwd(), "data");
-const DB_PATH = path.join(DB_DIR, "tradicionale.db");
+const url = process.env.TURSO_DATABASE_URL ?? "file:./data/tradicionale.db";
+const authToken = process.env.TURSO_AUTH_TOKEN;
 
-if (!fs.existsSync(DB_DIR)) {
-  fs.mkdirSync(DB_DIR, { recursive: true });
+// Local file mode only: make sure the folder exists (Turso/remote skips this).
+if (url.startsWith("file:")) {
+  const dir = path.dirname(url.slice("file:".length));
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+  } catch {
+    /* ignore */
+  }
 }
 
-// Reuse a single connection across hot-reloads in dev.
-const globalForDb = globalThis as unknown as { db?: Database.Database };
+const globalForDb = globalThis as unknown as { db?: Client };
 
-export const db =
-  globalForDb.db ??
-  (() => {
-    const instance = new Database(DB_PATH);
-    instance.pragma("journal_mode = WAL");
-    instance.pragma("foreign_keys = ON");
-    return instance;
-  })();
+export const db: Client =
+  globalForDb.db ?? createClient(authToken ? { url, authToken } : { url });
 
 if (process.env.NODE_ENV !== "production") globalForDb.db = db;
 
-let initialized = false;
+// Schema is created once per process; the cached promise dedupes concurrent calls.
+let schemaReady: Promise<void> | null = null;
 
-export function initDb() {
-  if (initialized) return;
-  initialized = true;
+export function ensureSchema(): Promise<void> {
+  if (!schemaReady) schemaReady = initSchema();
+  return schemaReady;
+}
 
-  db.exec(`
+async function initSchema() {
+  await db.executeMultiple(`
     CREATE TABLE IF NOT EXISTS products (
       id            INTEGER PRIMARY KEY AUTOINCREMENT,
       name_sq       TEXT NOT NULL,
@@ -82,7 +88,6 @@ export function initDb() {
     CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
     CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 
-    -- Generic image store: optimized WebP bytes + a small thumbnail, in-DB.
     CREATE TABLE IF NOT EXISTS images (
       id         INTEGER PRIMARY KEY AUTOINCREMENT,
       data       BLOB NOT NULL,
@@ -92,7 +97,6 @@ export function initDb() {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
-    -- Many images per product, with ordering and a primary flag.
     CREATE TABLE IF NOT EXISTS product_images (
       id         INTEGER PRIMARY KEY AUTOINCREMENT,
       product_id INTEGER NOT NULL,
@@ -104,7 +108,6 @@ export function initDb() {
     );
     CREATE INDEX IF NOT EXISTS idx_product_images_product ON product_images(product_id);
 
-    -- Single-row homepage hero configuration (id is always 1).
     CREATE TABLE IF NOT EXISTS hero (
       id          INTEGER PRIMARY KEY CHECK (id = 1),
       eyebrow_sq  TEXT DEFAULT '',
@@ -121,7 +124,6 @@ export function initDb() {
       image_id    INTEGER
     );
 
-    -- Promotional banners (offers, discounts, seasonal campaigns).
     CREATE TABLE IF NOT EXISTS promos (
       id        INTEGER PRIMARY KEY AUTOINCREMENT,
       title_sq  TEXT DEFAULT '',
@@ -138,144 +140,71 @@ export function initDb() {
     );
   `);
 
-  migrate();
-  seedProducts();
-  seedHero();
+  await migrate();
+  await seedProducts();
+  await seedHero();
 }
 
-/** Lightweight migrations for databases created before a column existed. */
-function migrate() {
-  const cols = db.prepare("PRAGMA table_info(products)").all() as {
-    name: string;
-  }[];
-  if (!cols.some((c) => c.name === "featured")) {
-    db.exec("ALTER TABLE products ADD COLUMN featured INTEGER NOT NULL DEFAULT 0");
+/** Add columns that may be missing on databases created before they existed. */
+async function migrate() {
+  const p = await db.execute("PRAGMA table_info(products)");
+  if (!p.rows.some((r) => r.name === "featured")) {
+    await db.execute(
+      "ALTER TABLE products ADD COLUMN featured INTEGER NOT NULL DEFAULT 0"
+    );
   }
-
-  const orderCols = db.prepare("PRAGMA table_info(orders)").all() as {
-    name: string;
-  }[];
-  if (!orderCols.some((c) => c.name === "source")) {
-    db.exec("ALTER TABLE orders ADD COLUMN source TEXT NOT NULL DEFAULT 'online'");
+  const o = await db.execute("PRAGMA table_info(orders)");
+  if (!o.rows.some((r) => r.name === "source")) {
+    await db.execute(
+      "ALTER TABLE orders ADD COLUMN source TEXT NOT NULL DEFAULT 'online'"
+    );
   }
 }
 
-function seedHero() {
-  const existing = db.prepare("SELECT id FROM hero WHERE id = 1").get();
-  if (existing) return;
-  db.prepare(
-    `INSERT INTO hero
-      (id, eyebrow_sq, eyebrow_en, title_sq, title_en, subtitle_sq, subtitle_en,
-       cta_sq, cta_en, cta_href, badge_sq, badge_en)
-     VALUES (1, @eyebrow_sq, @eyebrow_en, @title_sq, @title_en, @subtitle_sq,
-       @subtitle_en, @cta_sq, @cta_en, @cta_href, @badge_sq, @badge_en)`
-  ).run({
-    eyebrow_sq: "Në mënyrë artizanale",
-    eyebrow_en: "The artisanal way",
-    title_sq: "E përgatitur si dikur.",
-    title_en: "Made the old way.",
-    subtitle_sq:
-      "Ushqime tradicionale të punuara me dorë, çdo ditë. Dërgesa falas në Prishtinë.",
-    subtitle_en:
-      "Traditional handmade food, every day. Free delivery in Pristina.",
-    cta_sq: "Porosit tani",
-    cta_en: "Order now",
-    cta_href: "/menu",
-    badge_sq: "",
-    badge_en: "",
-  });
-}
-
-function seedProducts() {
-  const count = db.prepare("SELECT COUNT(*) AS c FROM products").get() as {
-    c: number;
-  };
-  if (count.c > 0) return;
-
-  const insert = db.prepare(`
-    INSERT INTO products
-      (name_sq, name_en, description_sq, description_en, price, category, unit_sq, unit_en, stock, active)
-    VALUES
-      (@name_sq, @name_en, @description_sq, @description_en, @price, @category, @unit_sq, @unit_en, @stock, @active)
-  `);
+async function seedProducts() {
+  const count = await db.execute("SELECT COUNT(*) AS c FROM products");
+  if (Number((count.rows[0] as unknown as { c: number }).c) > 0) return;
 
   const seed = [
-    {
-      name_sq: "Mantia",
-      name_en: "Manti",
-      description_sq: "Mantia tradicionale të punuara me dorë, 75–80 copë.",
-      description_en: "Traditional handmade manti, 75–80 pieces.",
-      price: 8.0,
-      category: "Tava",
-      unit_sq: "tavë",
-      unit_en: "tray",
-      stock: 20,
-      active: 1,
-    },
-    {
-      name_sq: "Byrek me mish",
-      name_en: "Pie with meat",
-      description_sq: "Byrek shtëpie me mish, petë e hollë artizanale.",
-      description_en: "Homemade meat pie, thin artisanal pastry.",
-      price: 5.0,
-      category: "Byrek",
-      unit_sq: "copë",
-      unit_en: "pcs",
-      stock: 30,
-      active: 1,
-    },
-    {
-      name_sq: "Byrek me spinaq",
-      name_en: "Pie with spinach",
-      description_sq: "Byrek me spinaq dhe djathë.",
-      description_en: "Spinach and cheese pie.",
-      price: 4.5,
-      category: "Byrek",
-      unit_sq: "copë",
-      unit_en: "pcs",
-      stock: 30,
-      active: 1,
-    },
-    {
-      name_sq: "Fli",
-      name_en: "Flia",
-      description_sq: "Fli tradicionale me maze, e pjekur ngadalë.",
-      description_en: "Traditional flia with cream layers, slow baked.",
-      price: 10.0,
-      category: "Tava",
-      unit_sq: "tavë",
-      unit_en: "tray",
-      stock: 15,
-      active: 1,
-    },
-    {
-      name_sq: "Petulla",
-      name_en: "Petulla (fritters)",
-      description_sq: "Petulla shtëpie, porcion familjar.",
-      description_en: "Homemade fried dough, family portion.",
-      price: 3.5,
-      category: "Tjera",
-      unit_sq: "porcion",
-      unit_en: "portion",
-      stock: 25,
-      active: 1,
-    },
-    {
-      name_sq: "Sarma",
-      name_en: "Sarma (stuffed leaves)",
-      description_sq: "Sarma me gjethe rrushi, të mbushura me dorë.",
-      description_en: "Vine-leaf rolls, hand-stuffed.",
-      price: 7.0,
-      category: "Tava",
-      unit_sq: "tavë",
-      unit_en: "tray",
-      stock: 18,
-      active: 1,
-    },
+    ["Mantia", "Manti", "Mantia tradicionale të punuara me dorë, 75–80 copë.", "Traditional handmade manti, 75–80 pieces.", 8.0, "Tava", "tavë", "tray", 20],
+    ["Byrek me mish", "Pie with meat", "Byrek shtëpie me mish, petë e hollë artizanale.", "Homemade meat pie, thin artisanal pastry.", 5.0, "Byrek", "copë", "pcs", 30],
+    ["Byrek me spinaq", "Pie with spinach", "Byrek me spinaq dhe djathë.", "Spinach and cheese pie.", 4.5, "Byrek", "copë", "pcs", 30],
+    ["Fli", "Flia", "Fli tradicionale me maze, e pjekur ngadalë.", "Traditional flia with cream layers, slow baked.", 10.0, "Tava", "tavë", "tray", 15],
+    ["Petulla", "Petulla (fritters)", "Petulla shtëpie, porcion familjar.", "Homemade fried dough, family portion.", 3.5, "Tjera", "porcion", "portion", 25],
+    ["Sarma", "Sarma (stuffed leaves)", "Sarma me gjethe rrushi, të mbushura me dorë.", "Vine-leaf rolls, hand-stuffed.", 7.0, "Tava", "tavë", "tray", 18],
   ];
 
-  const tx = db.transaction(() => {
-    for (const p of seed) insert.run(p);
+  await db.batch(
+    seed.map((s) => ({
+      sql: `INSERT INTO products
+              (name_sq, name_en, description_sq, description_en, price, category, unit_sq, unit_en, stock, active, featured)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0)`,
+      args: s,
+    })),
+    "write"
+  );
+}
+
+async function seedHero() {
+  const existing = await db.execute("SELECT id FROM hero WHERE id = 1");
+  if (existing.rows.length > 0) return;
+  await db.execute({
+    sql: `INSERT INTO hero
+            (id, eyebrow_sq, eyebrow_en, title_sq, title_en, subtitle_sq, subtitle_en,
+             cta_sq, cta_en, cta_href, badge_sq, badge_en)
+          VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [
+      "Në mënyrë artizanale",
+      "The artisanal way",
+      "E përgatitur si dikur.",
+      "Made the old way.",
+      "Ushqime tradicionale të punuara me dorë, çdo ditë. Dërgesa falas në Prishtinë.",
+      "Traditional handmade food, every day. Free delivery in Pristina.",
+      "Porosit tani",
+      "Order now",
+      "/menu",
+      "",
+      "",
+    ],
   });
-  tx();
 }

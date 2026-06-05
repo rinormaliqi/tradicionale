@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   }
   const lang = (req.nextUrl.searchParams.get("lang") === "en" ? "en" : "sq") as Lang;
 
-  const statement = getMonthlyStatement(ym);
+  const statement = await getMonthlyStatement(ym);
   const pdf = await buildStatementPdf(ym, statement, lang);
 
   return new Response(new Uint8Array(pdf), {

@@ -3,7 +3,7 @@ import { getActiveProducts, getOrdersPage } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
-export default function OrdersPage({
+export default async function OrdersPage({
   searchParams,
 }: {
   searchParams: { status?: string; q?: string; page?: string };
@@ -12,8 +12,10 @@ export default function OrdersPage({
   const search = searchParams.q ?? "";
   const page = Number(searchParams.page ?? "1") || 1;
 
-  const data = getOrdersPage({ status, search, page, pageSize: 20 });
-  const products = getActiveProducts();
+  const [data, products] = await Promise.all([
+    getOrdersPage({ status, search, page, pageSize: 20 }),
+    getActiveProducts(),
+  ]);
 
   return (
     <OrdersView

@@ -29,7 +29,7 @@ export async function placeOrder(input: {
   }
 
   try {
-    const orderId = createOrder({
+    const orderId = await createOrder({
       customer_name: name,
       phone,
       address,
@@ -49,7 +49,7 @@ export async function placeOrder(input: {
 
 export async function changeOrderStatus(id: number, status: string) {
   if (!isAuthenticated()) return { ok: false };
-  updateOrderStatus(id, status);
+  await updateOrderStatus(id, status);
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${id}`);
   revalidatePath("/admin/dashboard");
@@ -76,7 +76,7 @@ export async function createManualOrder(input: {
   }
 
   try {
-    const orderId = createOrder({
+    const orderId = await createOrder({
       customer_name: name,
       phone,
       address: input.address?.trim() || "—",

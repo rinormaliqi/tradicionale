@@ -3,8 +3,10 @@ import { getActiveProducts, getCategories } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
-export default function MenuPage() {
-  const products = getActiveProducts();
-  const categories = getCategories();
+export default async function MenuPage() {
+  const [products, categories] = await Promise.all([
+    getActiveProducts(),
+    getCategories(),
+  ]);
   return <MenuView products={products} categories={categories} />;
 }

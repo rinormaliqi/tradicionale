@@ -4,8 +4,8 @@ import { getOrder } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
-export default function OrderPage({ params }: { params: { id: string } }) {
-  const order = getOrder(Number(params.id));
+export default async function OrderPage({ params }: { params: { id: string } }) {
+  const order = await getOrder(Number(params.id));
   if (!order) notFound();
   return <OrderConfirmation order={order} />;
 }

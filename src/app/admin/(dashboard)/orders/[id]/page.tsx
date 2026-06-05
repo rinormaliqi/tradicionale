@@ -4,12 +4,12 @@ import { getOrder } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
-export default function OrderDetailPage({
+export default async function OrderDetailPage({
   params,
 }: {
   params: { id: string };
 }) {
-  const order = getOrder(Number(params.id));
+  const order = await getOrder(Number(params.id));
   if (!order) notFound();
   return <OrderDetailView order={order} />;
 }

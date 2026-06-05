@@ -43,9 +43,9 @@ export async function saveProduct(fd: FormData) {
   let productId: number;
   if (idRaw) {
     productId = Number(idRaw);
-    updateProduct(productId, input);
+    await updateProduct(productId, input);
   } else {
-    productId = createProduct(input);
+    productId = await createProduct(input);
   }
   revalidatePath("/admin/products");
   revalidatePath("/admin/inventory");
@@ -56,7 +56,7 @@ export async function saveProduct(fd: FormData) {
 
 export async function removeProduct(id: number) {
   if (!isAuthenticated()) return { ok: false };
-  deleteProduct(id);
+  await deleteProduct(id);
   revalidatePath("/admin/products");
   revalidatePath("/admin/inventory");
   revalidatePath("/menu");
@@ -66,7 +66,7 @@ export async function removeProduct(id: number) {
 
 export async function setStock(id: number, stock: number) {
   if (!isAuthenticated()) return { ok: false };
-  updateStock(id, Math.max(0, Math.floor(stock)));
+  await updateStock(id, Math.max(0, Math.floor(stock)));
   revalidatePath("/admin/inventory");
   revalidatePath("/menu");
   return { ok: true };
@@ -86,8 +86,8 @@ export async function uploadProductImage(productId: number, fd: FormData) {
   try {
     const buf = Buffer.from(await file.arrayBuffer());
     const processed = await processImage(buf);
-    const imageId = addImage(processed);
-    addProductImage(productId, imageId);
+    const imageId = await addImage(processed);
+    await addProductImage(productId, imageId);
     revalidatePath("/admin/products");
     revalidatePath("/menu");
     revalidatePath("/");
@@ -99,7 +99,7 @@ export async function uploadProductImage(productId: number, fd: FormData) {
 
 export async function removeProductImage(linkId: number) {
   if (!isAuthenticated()) return { ok: false };
-  deleteProductImage(linkId);
+  await deleteProductImage(linkId);
   revalidatePath("/admin/products");
   revalidatePath("/menu");
   revalidatePath("/");
@@ -108,7 +108,7 @@ export async function removeProductImage(linkId: number) {
 
 export async function makePrimaryImage(linkId: number) {
   if (!isAuthenticated()) return { ok: false };
-  setPrimaryProductImage(linkId);
+  await setPrimaryProductImage(linkId);
   revalidatePath("/admin/products");
   revalidatePath("/menu");
   revalidatePath("/");
@@ -117,5 +117,5 @@ export async function makePrimaryImage(linkId: number) {
 
 export async function listProductImages(productId: number) {
   if (!isAuthenticated()) return [];
-  return getProductImages(productId);
+  return await getProductImages(productId);
 }

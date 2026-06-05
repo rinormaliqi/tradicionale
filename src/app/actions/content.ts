@@ -38,7 +38,7 @@ export async function saveHero(fd: FormData) {
     badge_en: s(fd, "badge_en"),
     image_id: fd.get("image_id") ? Number(fd.get("image_id")) : null,
   };
-  updateHero(input);
+  await updateHero(input);
   revalidatePath("/");
   revalidatePath("/admin/content");
   return { ok: true };
@@ -50,8 +50,8 @@ export async function uploadHeroImage(fd: FormData) {
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "NO_FILE" };
   try {
     const buf = Buffer.from(await file.arrayBuffer());
-    const imageId = addImage(await processImage(buf));
-    setHeroImage(imageId);
+    const imageId = await addImage(await processImage(buf));
+    await setHeroImage(imageId);
     revalidatePath("/");
     revalidatePath("/admin/content");
     return { ok: true };
@@ -62,7 +62,7 @@ export async function uploadHeroImage(fd: FormData) {
 
 export async function removeHeroImage() {
   if (!isAuthenticated()) return { ok: false };
-  clearHeroImage();
+  await clearHeroImage();
   revalidatePath("/");
   revalidatePath("/admin/content");
   return { ok: true };
@@ -94,9 +94,9 @@ export async function savePromo(fd: FormData) {
   let promoId: number;
   if (idRaw) {
     promoId = Number(idRaw);
-    updatePromo(promoId, input);
+    await updatePromo(promoId, input);
   } else {
-    promoId = createPromo(input);
+    promoId = await createPromo(input);
   }
   revalidatePath("/");
   revalidatePath("/admin/content");
@@ -109,8 +109,8 @@ export async function uploadPromoImage(promoId: number, fd: FormData) {
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "NO_FILE" };
   try {
     const buf = Buffer.from(await file.arrayBuffer());
-    const imageId = addImage(await processImage(buf));
-    setPromoImage(promoId, imageId);
+    const imageId = await addImage(await processImage(buf));
+    await setPromoImage(promoId, imageId);
     revalidatePath("/");
     revalidatePath("/admin/content");
     return { ok: true };
@@ -121,7 +121,7 @@ export async function uploadPromoImage(promoId: number, fd: FormData) {
 
 export async function removePromo(id: number) {
   if (!isAuthenticated()) return { ok: false };
-  deletePromo(id);
+  await deletePromo(id);
   revalidatePath("/");
   revalidatePath("/admin/content");
   return { ok: true };

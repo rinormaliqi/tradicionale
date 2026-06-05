@@ -3,8 +3,7 @@ import { getAllPromos, getHero } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
-export default function ContentPage() {
-  const hero = getHero();
-  const promos = getAllPromos();
+export default async function ContentPage() {
+  const [hero, promos] = await Promise.all([getHero(), getAllPromos()]);
   return <ContentView hero={hero} promos={promos} />;
 }

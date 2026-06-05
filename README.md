@@ -92,14 +92,22 @@ Stock is automatically decremented when an order is placed (online or manual).
   name, price, category and stock.
 - **Update stock** → `/admin/inventory` → change the number → Save.
 
-## Deploy for free (later)
+## Deploy (Vercel + Turso)
 
-The data layer is isolated in `src/lib/db.ts`. To host on a free, always-on platform:
+The app is ready to deploy on **Vercel** with a free **Turso** database (SQLite-compatible,
+never sleeps). The data layer (`src/lib/db.ts`) automatically uses Turso when
+`TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` are set, and a local file otherwise — so the
+same code runs locally and in production.
 
-1. Deploy the app to **Vercel** (free, auto-deploys from GitHub).
-2. Swap SQLite for **Turso** (free hosted SQLite, never sleeps) by changing only
-   `src/lib/db.ts` to use the Turso client — the rest of the app is unchanged.
-3. Set `ADMIN_PASSWORD` and `AUTH_SECRET` as environment variables in Vercel.
+See **[DEPLOY.md](DEPLOY.md)** for the full step-by-step guide. In short:
+
+1. Push the repo to GitHub.
+2. `turso db create tradicionale` → copy its URL + token.
+3. Import the repo on Vercel and set 4 env vars: `ADMIN_PASSWORD`, `AUTH_SECRET`,
+   `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`.
+4. Deploy. Tables + the starter menu are created automatically on first load.
+
+Environment variables are documented in **[.env.example](.env.example)**.
 
 ## Notes
 

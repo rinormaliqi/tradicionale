@@ -3,7 +3,7 @@ import { getAllProducts } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
-export default function InventoryPage() {
-  const products = getAllProducts();
+export default async function InventoryPage() {
+  const products = await getAllProducts();
   return <InventoryView products={products} />;
 }
