@@ -75,7 +75,7 @@ export function ReportsView({
 
       {/* Printable report */}
       <div className="print-area">
-        <div className="card p-8">
+        <div className="card p-5 sm:p-8">
           {/* Report header */}
           <div className="flex items-start justify-between border-b border-line pb-5">
             <div>

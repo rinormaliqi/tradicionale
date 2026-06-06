@@ -87,6 +87,7 @@ export const dict = {
 
   // Admin
   admin_login: { sq: "Hyrje në panel", en: "Admin login" },
+  back_to_site: { sq: "Kthehu te faqja", en: "Back to site" },
   admin_password: { sq: "Fjalëkalimi", en: "Password" },
   admin_enter: { sq: "Hyr", en: "Enter" },
   admin_wrong: { sq: "Fjalëkalim i gabuar", en: "Wrong password" },
@@ -234,6 +235,22 @@ export const dict = {
   rep_period: { sq: "Periudha", en: "Period" },
   rep_generated: { sq: "Gjeneruar më", en: "Generated on" },
   no_data_month: { sq: "Asnjë porosi për këtë muaj.", en: "No orders for this month." },
+
+  // Error pages
+  nf_code: { sq: "404", en: "404" },
+  nf_title: { sq: "Faqja nuk u gjet", en: "Page not found" },
+  nf_text: {
+    sq: "Na vjen keq, faqja që kërkuat nuk ekziston ose është zhvendosur. Kontrolloni adresën ose kthehuni te ballina.",
+    en: "Sorry, the page you're looking for doesn't exist or has moved. Check the address or go back home.",
+  },
+  err_title: { sq: "Diçka shkoi keq", en: "Something went wrong" },
+  err_text: {
+    sq: "Ndodhi një gabim i papritur. Ju lutemi provoni përsëri ose kthehuni te ballina.",
+    en: "An unexpected error occurred. Please try again or go back home.",
+  },
+  go_home: { sq: "Kthehu te ballina", en: "Back to home" },
+  go_menu: { sq: "Shiko menynë", en: "Browse the menu" },
+  try_again: { sq: "Provo përsëri", en: "Try again" },
 } as const;
 
 export type DictKey = keyof typeof dict;

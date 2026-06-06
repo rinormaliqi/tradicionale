@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useLang } from "./Providers";
 
 export function Footer() {
@@ -20,8 +21,16 @@ export function Footer() {
           <p className="mt-1">045 301 306</p>
         </div>
       </div>
-      <div className="border-t border-line py-4 text-center text-xs text-muted">
-        © {new Date().getFullYear()} Tradicionale
+      <div className="border-t border-line py-4">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-center gap-2 px-4 text-center text-xs text-muted sm:flex-row sm:justify-between">
+          <span>© {new Date().getFullYear()} Tradicionale</span>
+          <Link
+            href="/admin"
+            className="text-muted underline-offset-2 transition-colors hover:text-brand hover:underline"
+          >
+            {t("admin_login")}
+          </Link>
+        </div>
       </div>
     </footer>
   );

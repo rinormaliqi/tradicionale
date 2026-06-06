@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Nunito } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+import { SITE_URL } from "@/lib/site";
 
 const display = Cormorant_Garamond({
   subsets: ["latin"],
@@ -18,9 +19,51 @@ const sans = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "Tradicionale — Në mënyrë artizanale",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Tradicionale — Ushqime tradicionale shqiptare | Porosi online, Prishtinë",
+    template: "%s | Tradicionale",
+  },
   description:
-    "Ushqime tradicionale të punuara me dorë. Porosit online, dërgesa falas në Prishtinë.",
+    "Tradicionale — ushqime tradicionale shqiptare të punuara me dorë: mantia, byrek, fli, sarma. Porosit online, dërgesa falas në Prishtinë. Çdo ditë 09:00–18:00.",
+  keywords: [
+    "ushqime tradicionale shqiptare",
+    "mantia",
+    "byrek",
+    "fli",
+    "sarma",
+    "porosi online ushqim",
+    "dërgesa ushqimi Prishtinë",
+    "gatime tradicionale Kosovë",
+    "ushqim shtëpie Prishtinë",
+    "traditional Albanian food",
+    "Albanian food delivery Pristina",
+  ],
+  applicationName: "Tradicionale",
+  authors: [{ name: "Tradicionale" }],
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "sq_AL",
+    alternateLocale: "en_US",
+    url: SITE_URL,
+    siteName: "Tradicionale",
+    title: "Tradicionale — Ushqime tradicionale shqiptare, porosit online",
+    description:
+      "Ushqime tradicionale shqiptare të punuara me dorë. Porosit online, dërgesa falas në Prishtinë.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tradicionale — Ushqime tradicionale shqiptare",
+    description:
+      "Mantia, byrek, fli e më shumë. Porosit online, dërgesa falas në Prishtinë.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
+  category: "food",
 };
 
 export default function RootLayout({

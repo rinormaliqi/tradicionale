@@ -114,11 +114,11 @@ export function OrdersView({
         {data.total} {t("results_count")}
       </p>
 
-      <div className="card mt-2 overflow-hidden">
+      <div className="card mt-2 overflow-x-auto">
         {data.orders.length === 0 ? (
           <p className="p-8 text-center text-muted">{t("no_orders")}</p>
         ) : (
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-line bg-surface text-xs uppercase tracking-wide text-muted">
               <tr>
                 <th className="px-4 py-3">{t("th_order")}</th>

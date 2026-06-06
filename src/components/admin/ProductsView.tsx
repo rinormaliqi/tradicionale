@@ -35,8 +35,8 @@ export function ProductsView({ products }: { products: ProductWithImages[] }) {
         </button>
       </div>
 
-      <div className="card mt-6 overflow-hidden">
-        <table className="w-full text-left text-sm">
+      <div className="card mt-6 overflow-x-auto">
+        <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="border-b border-line bg-surface text-xs uppercase tracking-wide text-muted">
             <tr>
               <th className="px-4 py-3" colSpan={2}>

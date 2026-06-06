@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useFormState, useFormStatus } from "react-dom";
 import { login } from "@/app/actions/auth";
 import { useLang } from "@/components/Providers";
 import { Logo } from "@/components/Logo";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { ArrowRightIcon } from "@/components/icons";
 
 function SubmitButton() {
   const { t } = useLang();
@@ -22,6 +24,14 @@ export default function AdminLoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-surface px-4">
+      <Link
+        href="/"
+        aria-label={t("back_to_site")}
+        className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-2 text-sm font-600 text-ink transition-colors hover:bg-surface"
+      >
+        <ArrowRightIcon size={16} className="rotate-180" />
+        <span className="hidden sm:inline">{t("back_to_site")}</span>
+      </Link>
       <div className="absolute right-4 top-4">
         <LanguageToggle />
       </div>
